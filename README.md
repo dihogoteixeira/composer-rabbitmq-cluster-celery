@@ -16,7 +16,7 @@ The main benifit with this approach is that you can use [any version](https://hu
 
 Most things will be how you expect:
 
-* The default username and password are `guest`/`guest`
+* The default username and password are `admin`/`admin`
 * The broker accepts connections on `localhost:5672`
 * The Management interface is found at `localhost:15672`
 
