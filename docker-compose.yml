@@ -1,0 +1,64 @@
+version: "3"
+services:
+  rabbit1:
+    image: lucifer8591/rabbitmq-server:3.7.17
+    hostname: rabbit1
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS:-admin}
+  rabbit2:
+    image: lucifer8591/rabbitmq-server:3.7.17
+    hostname: rabbit2
+    links:
+      - rabbit1
+    environment:
+      - CLUSTERED=true
+      - CLUSTER_WITH=rabbit1
+      - RAM_NODE=true
+  rabbit3:
+    image: lucifer8591/rabbitmq-server:3.7.17
+    hostname: rabbit3
+    links:
+      - rabbit1
+      - rabbit2
+    environment:
+      - CLUSTERED=true
+      - CLUSTER_WITH=rabbit1
+
+  # haproxy containers
+  haproxy:
+    image: haproxy:1.7
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - rabbit1
+      - rabbit2
+      - rabbit3
+    ports:
+      - 15672:15672
+      - 5672:5672
+
+  # celery-flower container
+  celery-flower:
+    container_name: celery-flower
+    hostname: celery-flower
+    environment:
+      - CELERY_BROKER_URL=amqp://admin:admin@rabbitmq:5672/
+    build:
+      context: ""
+      dockerfile: celery-flower/Dockerfile
+    ports:
+      - 5555:5555
+    command: ["--broker_api=http://admin:admin@rabbitmq:15672/api/"]
+    depends_on:
+      - rabbit1
+
+  # pgadmin container
+  pgadmin4:
+    container_name: pgadmin4
+    hostname: pgadmin4
+    build:
+      context: ""
+      dockerfile: pgadmin4/Dockerfile
+    ports:
+      - 80:80
